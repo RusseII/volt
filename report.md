@@ -1,3 +1,4 @@
+
 # Scope 
 https://github.com/volt-protocol/volt-protocol-core/pull/82
 
@@ -19,10 +20,10 @@ No issues found that were not already called out and mitigated in VIP-2.md
 
 # Methodology 
 
-I spent a majority of my time reviewing `VoltSystemOracle.sol` & `VoltSystemOracle.t.sol`. Below is a non-exaustive list of what was tested and explored.
+I spent a majority of my time reviewing `VoltSystemOracle.sol` & `VoltSystemOracle.t.sol`. Below is a non-exhaustive list of what was tested and explored.
 
 1. High level protocol overview and line by line code review.
-I looked through each of files updated in this PR to get a full understanding of the changes and to decide where I would spend the majority of my time.
+I looked through each of the files updated in this PR to get a full understanding of the changes and to decide where I would spend the majority of my time.
 
 2. Manual verification of the `getCurrentOraclePrice()` and `compoundInterest()` functions. I wanted to ensure that these functions were fully and correctly tested.
 
@@ -35,13 +36,11 @@ Some specific things I looked into:
 * How long into the future can this oracle be depended on?
 
 3. I explored the impact of what would happen if `compoundInterest()` did not get called for multiple days.
-This situation has already been called out by the core team and they will be using a keeper to prevent long periods of time without a `compoundInterest()` call.  As outlined by the team, calling this method in a timely fashion is imporant to prevent a possible price arbitrage between before the `compoundInterest()` call and after the call. Even in the case of a black swan event where `compoundInterest()` does go multiple days without being called the arbitrage opportunity is minimal due to the mint/redeem limits & fees. 
+This situation has already been called out by the core team and they will be using a keeper to prevent long periods of time without a `compoundInterest()` call.  As outlined by the team, calling this method in a timely fashion is important to prevent a possible price arbitrage between before the `compoundInterest()` call and after the call. Even in the case of a black swan event where `compoundInterest()` does go multiple days without being called, the arbitrage opportunity is minimal due to the mint/redeem limits & fees. 
 
 
 # Recommendations:
 * Magic strings (addresses) are used a few places in the code. I recommend naming all addresses that are being used in the code. 
-* I recommend exploring simplfying and clarifying the deployment logic and integration tests. While the current logic appears to be sound and well tested there seems to be some complexity which increases the risk of an error in future deployments. 
+* I recommend exploring simplifying and clarifying the deployment logic and integration tests. While the current logic appears to be sound and well tested there seems to be some complexity which increases the risk of an error in future deployments. 
 * Documentation and namings can be improved. Compounding interval was changed from 1y to 1mo but namings and descriptions have not yet been updated. 
 * Consider having a very small bips fee for minting/redeeming volt to negate any potential profit from flash mint/redeems. 
-
-
