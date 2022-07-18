@@ -1,62 +1,47 @@
-# Spearbit
+# Scope 
+https://github.com/volt-protocol/volt-protocol-core/pull/82
 
-Spearbit is a decentralized network of expert Web3 security engineers. Together, we help secure the Web3 ecosystem. We offer security reviews and related services to Web3 projects. Our  network has experience at every part of the stack, including protocol design, smart contracts, and the Solidity compiler itself. Spearbit brings in untapped security talent: expert freelance auditors who want flexibility to work on interesting projects together. Learn more about us at https://spearbit.com.
 
 # Introduction
 
-<!-- TODO  -->
-Some introduction on the protocol
-
-The focus of the security review was on the following:
-
-1. Specific security concern 1.
-2. Specific security concern 2.
-3. Specific security concern 3.
-
-*Disclaimer:* This security review does not guarantee against a hack. It is a snapshot in time of brink according to the specific commit by a three person team. Any modifications to the code will require a new security review.
-
-# Findings 
-
-## Critical Risk
-
-## High Risk
-### Issue title (Only first word should be capitalized; titles should never end with punctuation)
-
-**Severity:** High
-
-**Context:** [`Contract.sol#L160-L165`](https://github.com/actuallink)
-
-**Description:**
-
-```solidity
-contract Test {
-    ...
-    // Code blocks must be indented with 4 spaces.
-}
-```
-
-**Recommendation:**
-```diff
-+ use diff syntax to describe what should be changed
-- ...
-```
-
-**Project:** Fixed in [PR #1](Https://github.com/actuallink).
-
-**Spearbit:** Resolved.
-
-## Medium Risk
-
-## Low Risk
-
-## Gas Optimizations
+Volt was previously an inflation-pegged stablecoin. In the PR under review, they are moving from being pegged by a CPI oracle to being pegged by a VoltSystemOracle. The VoltSystemOracle is configured with a starting price, a start period of when interest should start accruing, and the monthly price change denominated in basis points. Once the VoltSystemOracle has been deployed these values can not be changed. For any changes of these values to happen a new oracle would need deployed and Volt protocol would need configured to use the new oracle.   
 
 
-# Additional Comments
+I spent a total of 10 hours reviewing the changes split across two days. I have reviewed Volt protocol in the past so I already had a good understanding of the system. 
+
+In this review, I spent a majority of my time reviewing `VoltSystemOracle.sol` & `VoltSystemOracle.t.sol`. I also did a less comprehensive review on the deployment scripts and integration tests. 
+
+*Disclaimer:* This security review does not guarantee against a hack. It is a snapshot in time of brink according to the specific commit by a one person team. Any modifications to the code will require a new security review.
+
+Summary:
+No issues found that were not already called out and mitigated in VIP-2.md
 
 
-<!-- A template hack to generate a newline in LaTeX -->
-\clearpage
+# Methodology 
 
-# Appendix
+I spent a majority of my time reviewing `VoltSystemOracle.sol` & `VoltSystemOracle.t.sol`. Below is a non-exaustive list of what was tested and explored.
+
+1. High level protocol overview and line by line code review.
+I looked through each of files updated in this PR to get a full understanding of the changes and to decide where I would spend the majority of my time.
+
+2. Manual verification of the `getCurrentOraclePrice()` and `compoundInterest()` functions. I wanted to ensure that these functions were fully and correctly tested.
+
+Some specific things I looked into: 
+* Are the `_calculateDelta` and `_calculateLinearInterpolation` helpers in `VoltSystemOracle.t.sol` correct? 
+* Does `getCurrentOraclePrice()` work correctly within a specific period?
+* Does `getCurrentOraclePrice()` work correctly across periods?
+* Any situations where `getCurrentOraclePrice()` could revert? 
+* Does the value returned by`getCurrentOraclePrice()` work correctly if there are multiple time periods between each `compoundInterest()` calls? 
+* How long into the future can this oracle be depended on?
+
+3. I explored the impact of what would happen if `compoundInterest()` did not get called for multiple days.
+This situation has already been called out by the core team and they will be using a keeper to prevent long periods of time without a `compoundInterest()` call.  As outlined by the team, calling this method in a timely fashion is imporant to prevent a possible price arbitrage between before the `compoundInterest()` call and after the call. Even in the case of a black swan event where `compoundInterest()` does go multiple days without being called the arbitrage opportunity is minimal due to the mint/redeem limits & fees. 
+
+
+# Recommendations:
+* Magic strings (addresses) are used a few places in the code. I recommend naming all addresses that are being used in the code. 
+* I recommend exploring simplfying and clarifying the deployment logic and integration tests. While the current logic appears to be sound and well tested there seems to be some complexity which increases the risk of an error in future deployments. 
+* Documentation and namings can be improved. Compounding interval was changed from 1y to 1mo but namings and descriptions have not yet been updated. 
+* Consider having a very small bips fee for minting/redeeming volt to negate any potential profit from flash mint/redeems. 
+
 
